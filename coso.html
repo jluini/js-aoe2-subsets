@@ -1,0 +1,270 @@
+<html>
+<script>
+    function BinarySeq(bools) {
+        this.bools = bools;
+        this.length = bools.length;
+    }
+
+    BinarySeq.zero = function(size) {
+        var arr = new Array(size);
+        
+        for(var i = 0; i < size; i++) {
+            arr[i] = false;
+        }
+        
+        return new BinarySeq(arr);
+    };
+
+    BinarySeq.a_and_b = function(a, b, bNegated) {
+        var arr = [];
+
+        for(var i = 0; i < a.length; i++) {
+            var av = a.isOn(i);
+            var bv = b.isOn(i);
+            
+            var value = av && (bNegated ? !bv : bv);
+            
+            arr.push(value);
+        }
+
+        return new BinarySeq(arr);
+    };
+
+    BinarySeq.prototype = {
+        isOn: function(e) {
+            return this.bools[e];
+        },
+
+        setBit: function(e) {
+            this.bools[e] = true;
+        },
+
+        zero: function() {
+            for(var e = 0; e < this.length; e++) {
+                if(this.isOn(e)) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        meetsConditions: function(conditions) {
+            var positiveConditions = conditions[0];
+            var negativeConditions = conditions[1];
+            
+            if(!BinarySeq.a_and_b(positiveConditions, this, true).zero()) {
+                return false;
+            }
+
+            if(!BinarySeq.a_and_b(negativeConditions, this, false).zero()) {
+                return false;
+            }
+
+            return true;
+        }
+    };
+
+    function Stats(config) {
+        this.config = config;
+        this._generate();
+    }
+
+    Stats.prototype = {
+        numberOfElements: function() {
+            return this.config.elementKeywords.length;
+        },
+
+        elementKeyword: function(elementIndex) {
+            return this.config.elementKeywords[elementIndex];
+        },
+
+        numberOfProperties: function() {
+            return this.config.propertyKeywords.length;
+        },
+
+        whichCivs: function(humanConditionList) {
+            var conditionHashes = this.humanConditionListToHashes(humanConditionList);
+            
+            return this._whichCivs(conditionHashes);
+        },
+
+        _whichCivs: function(conditionHashes) {
+            var out = []
+            
+            for(var e = 0; e < this.numberOfElements(); e++) {
+                if(this._meetsConditions(e, conditionHashes)) {
+                    out.push(this.elementKeyword(e));
+                }
+            }
+
+            return out;
+        },
+
+        _meetsConditions: function(elementIndex, conditionHashes) {
+            var positiveHash = conditionHashes[0];
+
+            var civHash = this.elementData[elementIndex];
+
+            // var op = BinarySeq.a_and_not_b(positiveHash, civHash);
+            // return op.zero();
+
+            return civHash.meetsConditions(conditionHashes);
+        },
+
+        humanConditionListToHashes: function(humanConditionList) {
+            // var out = [0, 0];
+            var out = [BinarySeq.zero(this.numberOfProperties()), BinarySeq.zero(this.numberOfProperties())];
+            
+            for(var h = 0; h < humanConditionList.length; h++) {
+                var humanCondition = humanConditionList[h];
+                var regexp = /(\+|\-|)(.+)/g;
+                var match = regexp.exec(humanCondition);
+
+                var negated = match[1] == "-";
+                
+                var propertyKey = match[2];
+                var propertyIndex = this.propertyKeyToIndex(propertyKey);
+
+                // out[negated ? 1 : 0] |= 1 << propertyIndex;
+
+                out[negated ? 1 : 0].setBit(propertyIndex);
+            }
+
+            return out;
+        },
+
+        propertyKeyToIndex: function(propertyKey) {
+            var index = this.config.propertyKeywords.indexOf(propertyKey);
+
+            if(index < 0) {
+                throw "Property key '" + propertyKey + "' not found";
+            }
+
+            return index;
+        },
+
+        // private
+
+        _generate: function() {
+            this.elementData = [];
+
+            for(var e = 0; e < this.numberOfElements(); e++) {
+                var newData = [];
+
+                for(var p = 0; p < this.numberOfProperties(); p++) {
+                    // if(this.config.properties[p] & 1 << e) {
+                    //     newData |= 1 << p;
+                    // }
+                    newData.push(this.config.properties[p].isOn(e));
+                }
+                
+                this.elementData.push(new BinarySeq(newData));
+            }
+        }
+    };
+
+    function allBut(civs, which) {
+        var s = [];
+
+        for(var i = 0; i < civs.length; i++) {
+            s.push(!which.includes(civs[i]));
+        }
+        
+        return new BinarySeq(s);
+    }
+
+    function prueba(stats) {
+        console.log("Probando...");
+
+        console.log("Civs con ballesteros pero sin cañones:");
+        
+        console.log(stats.whichCivs(["+crossbowman", "-bbc"]));
+    }
+
+    var civs = [
+        "aztecs",      // 0
+        "berbers",     // 1
+        "bohemians",   // 2
+        "britons",     // 3
+        "bulgarians",  // 4
+        "burgundians", // 5
+        "burmese",     // 6
+        "byzantines",  // 7
+        "celts",       // 8
+        "chinese",     // 9
+        "cumans",      // 10
+        "ethiopians",  // 11
+        "franks",      // 12
+        "goths",       // 13
+        "huns",        // 14
+        "incas",       // 15
+        "indians",     // 16
+        "italians",    // 17
+        "japanese",    // 18
+        "khmer",       // 19
+        "koreans",     // 20
+        "lithuanians", // 21
+        "malay",       // 22
+        "malians",     // 23
+        "magyars",     // 24
+        "mayans",      // 25
+        "mongols",     // 26
+        "persians",    // 27
+        "poles",       // 28
+        "portuguese",  // 29
+        "saracens",    // 30
+        "sicilians",   // 31
+        "slavs",       // 32
+        "spanish",     // 33
+        "tatars",      // 34
+        "teutons",     // 35
+        "turks",       // 36
+        "vietnamese",  // 37
+        "vikings"      // 38
+    ];
+    
+    var config = {
+        // numElements: 39,
+        elementKeywords: civs,
+        
+        //numProperties: 
+        propertyKeywords: [
+            "crossbowman",
+            "bbc",
+            "heresy"
+        ],
+
+        properties: [
+            // crossbowman
+            allBut(civs, ["bulgarians", "spanish"]),
+
+            // bbc
+            allBut(civs, [
+                "aztecs",
+                "britons",
+                "bulgarians",
+                "celts",
+                "chinese",
+                "cumans",
+                "huns",
+                "incas",
+                "japanese",
+                "khmer",
+                "magyars",
+                "mayans",
+                "mongols",
+                "sicilians",
+                "slavs",
+                "tatars",
+                "vikings"
+            ]),
+            BinarySeq.zero(civs.length)
+        ]
+    };
+
+    var stats = new Stats(config);
+    window.stats = stats;
+    prueba(stats);
+    
+</script>
+</html>
