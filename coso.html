@@ -79,7 +79,12 @@
         },
 
         numberOfProperties: function() {
-            return this.config.propertyKeywords.length;
+            return this.propertyKeys.length;
+        },
+        
+        isPropertyOn: function(p, e) {
+            // return this.config.properties[p].isOn(e);
+            return this.propertyValues[p].isOn(e);
         },
 
         whichCivs: function(humanConditionList) {
@@ -112,7 +117,6 @@
         },
 
         humanConditionListToHashes: function(humanConditionList) {
-            // var out = [0, 0];
             var out = [BinarySeq.zero(this.numberOfProperties()), BinarySeq.zero(this.numberOfProperties())];
             
             for(var h = 0; h < humanConditionList.length; h++) {
@@ -125,8 +129,6 @@
                 var propertyKey = match[2];
                 var propertyIndex = this.propertyKeyToIndex(propertyKey);
 
-                // out[negated ? 1 : 0] |= 1 << propertyIndex;
-
                 out[negated ? 1 : 0].setBit(propertyIndex);
             }
 
@@ -134,7 +136,7 @@
         },
 
         propertyKeyToIndex: function(propertyKey) {
-            var index = this.config.propertyKeywords.indexOf(propertyKey);
+            var index = this.propertyKeys.indexOf(propertyKey);
 
             if(index < 0) {
                 throw "Property key '" + propertyKey + "' not found";
@@ -146,16 +148,30 @@
         // private
 
         _generate: function() {
+            this._generatePropertiesFromList(this.config.propertyValues);
+            this._generateElementDataFromProperties();
+        },
+        
+        _generatePropertiesFromList: function(list) {
+            var numberOfProperties = list.length;
+            
+            this.propertyKeys = new Array(numberOfProperties);
+            this.propertyValues = new Array(numberOfProperties);
+            
+            for(var p = 0; p < numberOfProperties; p++) {
+                this.propertyKeys[p] = list[p][0];
+                this.propertyValues[p] = list[p][1];
+            }
+        },
+        
+        _generateElementDataFromProperties: function() {
             this.elementData = [];
 
             for(var e = 0; e < this.numberOfElements(); e++) {
                 var newData = [];
 
                 for(var p = 0; p < this.numberOfProperties(); p++) {
-                    // if(this.config.properties[p] & 1 << e) {
-                    //     newData |= 1 << p;
-                    // }
-                    newData.push(this.config.properties[p].isOn(e));
+                    newData.push(this.isPropertyOn(p, e));
                 }
                 
                 this.elementData.push(new BinarySeq(newData));
@@ -163,16 +179,25 @@
         }
     };
 
+    function allThese(civs, which) {
+        return listOf(civs, which, false);
+    }
+    
     function allBut(civs, which) {
+        return listOf(civs, which, true);
+    }
+    
+    function listOf(civs, which, negate) {
         var s = [];
 
         for(var i = 0; i < civs.length; i++) {
-            s.push(!which.includes(civs[i]));
+            var value = which.includes(civs[i]);
+            s.push(negate ? !value : value);
         }
         
         return new BinarySeq(s);
     }
-
+    
     function prueba(stats) {
         console.log("Probando...");
 
@@ -227,39 +252,103 @@
         // numElements: 39,
         elementKeywords: civs,
         
-        //numProperties: 
-        propertyKeywords: [
-            "crossbowman",
-            "bbc",
-            "heresy"
+        propertyValues: [
+            // barracks
+            
+            ["ths",                 allBut(civs, ["persians"])],
+            ["champion",            allBut(civs, ["bulgarians", "ethiopians", "huns", "khmer", "malay", "mayans", "persians", "tatars"])],
+            
+            ["pikeman",             allBut(civs, ["turks"])],
+            ["halberdier",          allBut(civs, ["aztecs", "berbers", "italians", "malians", "mongols", "poles", "saracens", "turks", "vikings"])],
+            
+            ["ew",                  allThese(civs, ["aztecs", "incas", "mayans"])],
+            
+            ["squires",             allBut(civs, ["celts", "khmer", "magyars", "portuguese"])],
+            ["supplies",            allBut(civs, ["burgundians", "chinese", "cumans", "goths", "huns", "khmer", "lithuanians", "mayans", "mongols", "tatars"])],
+            ["arson",               allBut(civs, ["goths"])],
+            
+            
+            // range
+            
+            ["crossbowman",         allBut(civs, ["bulgarians", "spanish"])],
+            ["arbalester",          allBut(civs, ["berbers", "bulgarians", "burgundians", "burmese", "celts", "cumans", "franks", "goths", "huns", "indians", "lithuanians", "persians", "slavs", "spanish", "tatars", "teutons", "turks"])],
+            
+            ["elite skirmisher",    allBut(civs, ["turks"])],
+            
+            ["ca",                  allBut(civs, ["aztecs", "bohemians", "incas", "mayans"])],
+            ["hca",                 allBut(civs, ["aztecs", "bohemians", "burgundians", "incas", "italians", "malay", "mayans", "portuguese", "sicilians", "teutons", "vikings"])],
+            
+            ["hc",                  allThese(civs, ["berbers", "bohemians", "burgundians", "byzantines", "franks", "goths", "indians", "italians", "japanese", "khmer", "koreans", "lithuanians", "malians", "persians", "portuguese", "saracens", "spanish", "tatars", "teutons", "turks"])],
+            
+            ["thumb ring",          allBut(civs, ["aztecs", "bohemians", "britons", "burgundians", "burmese", "celts", "franks", "goths", "khmer", "sicilians", "slavs", "teutons", "vikings"])],
+            ["parthian tactics",    allThese(civs, ["bulgarians", "burmese", "cumans", "huns", "indians", "japanese", "khmer", "magyars", "mongols", "persians", "saracens", "tatars", "turks"])],
+            
+            
+            // stable
+            
+            // TODO: units
+            
+            ["bloodlines",          allBut(civs, ["aztecs", "bohemians", "britons", "burgundians", "byzantines", "celts", "ethiopians", "franks", "incas", "koreans", "malay", "mayans", "vikings"])],
+            ["husbandry",           allBut(civs, ["aztecs", "cumans", "incas", "mayans", "teutons", "vikings"])],
+            
+            
+            // blacksmith
+            
+            // TODO
+            ["leather archer armor", allBut(civs, ["burmese"])],
+            ["ring archer armor",   allBut(civs, ["aztecs", "bulgarians", "burgundians", "burmese", "celts", "franks", "huns", "mongols", "poles", "sicilians"])],
+            ["bracer",              allBut(civs, ["celts", "cumans", "franks", "malians", "persians", "slavs", "teutons"])],
+            
+            
+            // others
+            // TODO
+            
+            ["bbc",                 allBut(civs, ["aztecs", "britons", "bulgarians", "celts", "chinese", "cumans", "huns", "incas", "japanese", "khmer", "magyars", "mayans", "mongols", "sicilians", "slavs", "tatars", "vikings"])],
+            
+            ["heresy",              BinarySeq.zero(civs.length)], // TODO
         ],
+        
+        
+        // //numProperties: 
+        // propertyKeywords: [
+            
+            
+            
+            
+            
+        //     "crossbowman",
+        //     "bbc",
+        //     "heresy"
+        // ],
 
-        properties: [
-            // crossbowman
-            allBut(civs, ["bulgarians", "spanish"]),
+        // properties: [
+        //     // crossbowman
+        //     allBut(civs, ["bulgarians", "spanish"]),
 
-            // bbc
-            allBut(civs, [
-                "aztecs",
-                "britons",
-                "bulgarians",
-                "celts",
-                "chinese",
-                "cumans",
-                "huns",
-                "incas",
-                "japanese",
-                "khmer",
-                "magyars",
-                "mayans",
-                "mongols",
-                "sicilians",
-                "slavs",
-                "tatars",
-                "vikings"
-            ]),
-            BinarySeq.zero(civs.length)
-        ]
+        //     // bbc
+        //     allBut(civs, [
+        //         "aztecs",
+        //         "britons",
+        //         "bulgarians",
+        //         "celts",
+        //         "chinese",
+        //         "cumans",
+        //         "huns",
+        //         "incas",
+        //         "japanese",
+        //         "khmer",
+        //         "magyars",
+        //         "mayans",
+        //         "mongols",
+        //         "sicilians",
+        //         "slavs",
+        //         "tatars",
+        //         "vikings"
+        //     ]),
+            
+        //     // heresy TODO
+        //     BinarySeq.zero(civs.length),
+        // ]
     };
 
     var stats = new Stats(config);
