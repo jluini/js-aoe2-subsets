@@ -19,21 +19,6 @@
         return new BinarySeq(arr);
     };
     
-    BinarySeq.a_and_b = function(a, b, bNegated) {
-        var arr = [];
-
-        for(var i = 0; i < a.length; i++) {
-            var av = a.isOn(i);
-            var bv = b.isOn(i);
-            
-            var value = av && (bNegated ? !bv : bv);
-            
-            arr.push(value);
-        }
-
-        return new BinarySeq(arr);
-    };
-
     BinarySeq.prototype = {
         isOn: function(e) {
             return this.bools[e];
@@ -101,6 +86,20 @@
         elementKeyword: function(elementIndex) {
             return this.config.elementKeywords[elementIndex];
         },
+        
+        propertyKeyword: function(propertyIndex) {
+            var out = this.propertyKeys[propertyIndex];
+            
+            if(typeof(out) == "undefined") {
+                throw "Invalid property index " + propertyIndex;
+            }
+            
+            return out;
+        },
+        
+        elementIndex: function(elementKeyword) {
+            return this.config.elementKeywords.indexOf(elementKeyword);
+        },
 
         numberOfProperties: function() {
             return this.propertyKeys.length;
@@ -108,6 +107,54 @@
         
         isPropertyOn: function(p, e) {
             return this.propertyValues[p].isOn(e);
+        },
+        
+        similarities: function(c1, c2) {
+            return this.compare(c1, c2, true);
+        },
+
+        differences: function(c1, c2) {
+            return this.compare(c1, c2, false);
+        },
+        
+        compare: function(c1, c2, val) {
+            var c1 = this.parseElement(c1);
+            var c2 = this.parseElement(c2);
+            
+            var out = [];
+            
+            for(var p = 0; p < this.numberOfProperties(); p++) {
+                var comp = this.isPropertyOn(p, c1) == this.isPropertyOn(p, c2);
+                
+                if(comp == val) {
+                    out.push(this.propertyKeyword(p))
+                }
+            }
+            
+            return out;
+        },
+
+        // Parsing
+
+        parseElement: function(originalElement) {
+            var element;
+            var typ = typeof(originalElement);
+            
+            if(typ == "string") {
+                element = this.elementIndex(originalElement);
+            } else if(typ == "number") {
+                if(typeof(this.elementKeyword(originalElement)) == "undefined") {
+                    element = -1;
+                } else {
+                    element =  originalElement;
+                }
+            }
+            
+            if(element < 0) {
+                throw "Invalid element '" + originalElement + "'"
+            }
+            
+            return element;
         },
 
         whichCivs: function(humanConditionList) {
@@ -204,6 +251,12 @@
     }
     
     function listOf(civs, which, negate) {
+        for(var i = 0; i < which.length; i++) {
+            if(!civs.includes(which[i])) {
+                throw "Unknown element '" + which[i] + "'"
+            }
+        }
+        
         var s = [];
 
         for(var i = 0; i < civs.length; i++) {
@@ -215,6 +268,8 @@
     }
     
     function prueba(stats) {
+        console.log("Hay", stats.numberOfProperties(), "propiedades");
+        
         var a1 = stats.whichCivs(["+crossbowman", "-bbc"]);
         console.log("Civs con ballesteros pero sin cañones:");
         console.log(a1);
@@ -222,6 +277,14 @@
         var a2 = stats.whichCivs(["hca", "bloodlines", "husbandry", "bracer", "ring archer armor", "thumb ring", "parthian tactics"]);
         console.log("Civs con CA totalmente desarrollados:");
         console.log(a2);
+        
+        var a3 = stats.whichCivs(["arbalester", "bracer", "ring archer armor", "thumb ring"]);
+        console.log("Civs con arbalesteros totalmente desarrollados:");
+        console.log(a3);
+        
+        var a4 = stats.whichCivs(["paladin", "blast furnace", "plate barding armor", "husbandry", "bloodlines"]);
+        console.log("Civs con paladines totalmente desarrollados:");
+        console.log(a4);
     }
 
     var civs = [
@@ -379,6 +442,45 @@
             ["heated shot",         allBut(civs, ["bohemians", "burgundians", "byzantines", "franks", "huns", "japanese", "mongols", "poles", "saracens", "slavs", "spanish"])],
             ["arrowslits",          allBut(civs, ["bulgarians", "burmese", "cumans", "ethiopians", "goths", "huns", "indians", "khmer", "lithuanians", "magyars", "malay", "malians", "mayans", "mongols", "persians", "portuguese", "slavs", "tatars"])],
             ["treadmill crane",     allBut(civs, ["britons", "bulgarians", "byzantines", "chinese", "cumans", "ethiopians", "franks", "goths", "huns", "indians", "khmer", "malay", "mongols", "persians", "slavs", "spanish"])],
+            
+            
+            // dock
+            
+            ["galleon",             allBut(civs, ["aztecs", "malians"])],
+            ["fire galley",         allBut(civs, ["vikings"])],
+            ["fire ship",           allBut(civs, ["vikings"])],
+            ["fast fire ship",      allBut(civs, ["bohemians", "bulgarians", "burmese", "celts", "chinese", "ethiopians", "huns", "indians", "portuguese", "saracens", "turks", "vietnamese", "vikings"])],
+            ["demo",                allBut(civs, ["koreans"])],
+            ["heavy demo",          allBut(civs, ["aztecs", "bohemians", "bulgarians", "burgundians", "burmese", "cumans", "ethiopians", "incas", "italians", "japanese", "khmer", "koreans", "lithuanians", "magyars", "malay", "poles", "slavs", "tatars"])],
+            ["cannon galleon",      allBut(civs, ["aztecs", "huns", "incas", "mayans", "cumans"])],
+            ["elite cannon galleon", allBut(civs, ["aztecs", "britons", "bulgarians", "celts", "chinese", "cumans", "ethiopians", "franks", "goths", "huns", "incas", "magyars", "malians", "mayans", "mongols", "poles", "sicilians", "slavs", "teutons"])],
+            ["dry dock",            allBut(civs, ["bulgarians", "burgundians", "bohemians", "cumans", "goths", "mongols", "poles", "teutons"])],
+            ["shipwright",          allThese(civs, ["aztecs", "britons", "byzantines", "celts", "chinese", "ethiopians", "goths", "incas", "italians", "japanese", "koreans", "magyars", "malay", "mayans", "mongols", "sicilians", "spanish", "turks"])],
+
+
+            // castle
+            
+            ["hoardings",           allBut(civs, ["aztecs", "bohemians", "bulgarians", "burmese", "chinese", "ethiopians", "goths", "huns", "japanese", "koreans", "malay", "portuguese", "tatars"])],
+            ["sappers",             allBut(civs, ["berbers", "bulgarians", "burmese", "byzantines", "franks", "indians", "italians", "japanese", "koreans", "lithuanians", "saracens"])],
+            
+            
+            // economic
+            
+            ["two man saw",         allBut(civs, ["aztecs", "berbers", "bulgarians", "celts", "franks", "incas", "khmer", "malay", "malians", "mongols", "poles", "sicilians", "tatars"])],
+            ["crop rotation",       allBut(civs, ["bohemians", "britons", "celts", "chinese", "ethiopians", "huns", "indians", "japanese", "koreans", "mongols", "saracens", "spanish", "turks"])],
+            ["gold shaft mining",   allBut(civs, ["goths", "italians", "lithuanians", "mayans", "poles", "portuguese", "spanish", "teutons", "vietnamese"])],
+            ["stone shaft mining",  allBut(civs, ["britons", "burmese", "cumans", "franks", "huns", "japanese", "magyars", "saracens", "slavs", "tatars", "turks", "vikings"])],
+            
+            
+            //
+            
+            ["stone wall",          allBut(civs, ["goths", "cumans"])],
+            ["watch tower",         allBut(civs, ["sicilians"])],
+            
+            
+            // market
+            
+            ["guilts",              allBut(civs, ["aztecs", "bulgarians", "chinese", "franks", "japanese", "khmer", "magyars", "mongols", "saracens", "slavs", "vikings"])],
             
             // ...
         ],
