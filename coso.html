@@ -13,6 +13,10 @@
         var a1 = stats.whichCivs(["+crossbowman", "-bbc"]);
         console.log("Civs con ballesteros pero sin cañones:");
         console.log(a1);
+        
+        var s2 = stats.h("ca", "indians");
+        console.log("Intersección CA+indios");
+        console.log(s2);
       }
       
       var stats = new Aoe2Subsets(Aoe2Data.data);

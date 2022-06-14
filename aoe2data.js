@@ -10,8 +10,9 @@
 
   function listOf(civs, which, negate) {
     for(var i = 0; i < which.length; i++) {
-      if(!civs.includes(which[i])) {
-        throw "Unknown element '" + which[i] + "'"
+      var element = which[i];
+      if(!civs.includes(element)) {
+        throw "Unknown element '" + element + "'"
       }
     }
     
@@ -25,6 +26,24 @@
     return new BinaryVector(s);
   }
 
+  function parseProperties(properties, list) {
+    for(var i = 0; i < list.length; i++) {
+      var property = list[i];
+      if(!properties.includes(property)) {
+        throw("Unknown property '" + property + "'");
+      }
+    }
+    
+    var s = [];
+
+    for(var i = 0; i < properties.length; i++) {
+      var value = list.includes(properties[i]);
+      s.push(value);
+    }
+    
+    return new BinaryVector(s);
+  }
+  
   var civs = [
     "aztecs",      // 0
     "berbers",     // 1
@@ -240,7 +259,11 @@
     data: {
       rowLabels: civs,
       colLabels: properties,
-      colValues: values
+      colValues: values,
+      
+      categories: {
+        ca: parseProperties(properties, ["ca", "hca", "thumb ring", "parthian tactics", "bloodlines", "husbandry", "leather archer armor", "ring archer armor", "bracer"])
+      }
     }
   };
   

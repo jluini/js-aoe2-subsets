@@ -32,10 +32,20 @@
       return this.bools[i];
     },
     
+    and: function(b) {
+      console.log(this, "AND", b);
+      return this.evaluate(
+        function(a, b) {
+          return a && b;
+        },
+        b
+      );
+    },
+    
     /* */
     
     weight: function() {
-      return this.reduce(0, function(accum, current) {
+      return this.reduce(0, function(accum, _index, current) {
         return [false, accum + (current ? 1 : 0)];
       });
     },
@@ -50,7 +60,7 @@
     allMet: function(a, b) {
       return this.reduce(
         true,
-        function(accum, current, a, b) {
+        function(_accum, _index, current, a, b) {
           var currentMet = ArrayBinaryVector.metFunction(current, a, b);
           
           if(currentMet) {
@@ -73,7 +83,7 @@
     // },
     
     all: function() {
-      return this.reduce(true, function(accum, current) {
+      return this.reduce(true, function(_accum, _index, current) {
         if(current) {
           return [false, true];
         } else {
@@ -86,7 +96,7 @@
       var value = initialValue;
       
       for(var i = 0; i < this.length; i++) {
-        var reduceArgs = [value, this.bools[i]];
+        var reduceArgs = [value, i, this.bools[i]];
         
         for(var j = 2; j < arguments.length; j++) {
           reduceArgs.push(arguments[j].getBit(i));
