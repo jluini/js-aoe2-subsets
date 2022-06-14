@@ -1,0 +1,151 @@
+<html>
+  <head>
+    <script src="polyfills.js"></script>
+    <script src="array_binary_vector.js"></script>
+    <script src="binary_matrix.js"></script>
+    <script src="rich_binary_matrix.js"></script>
+    <script src="aoe2data.js"></script>
+    <script src="aoe2subsets.js"></script>
+    <script>
+      function prueba(stats) {
+        console.log("Hay", stats.numberOfProperties(), "propiedades");
+        
+        var a1 = stats.whichCivs(["+crossbowman", "-bbc"]);
+        console.log("Civs con ballesteros pero sin cañones:");
+        console.log(a1);
+        
+        var s2 = stats.h("ca", "indians");
+        console.log("Intersección CA+indios");
+        console.log(s2);
+      }
+      
+      // var stats = new Aoe2Subsets(Aoe2Data.data);
+      // prueba(stats);
+      // window.stats = stats;
+      
+      var GENERALA = 0;
+      var TRIPLETE_MAS_DOS = 1;
+      var TRIPLETE_MAS_UNO = 2;
+      var TRIPLETE_MAS_CERO = 3;
+      var ESCALERA = 4;
+      var CUATRO_DADOS = 5;
+      var TRES_DADOS = 6;
+      var DOS_DADOS = 7;
+      var UN_DADO = 8;
+      var CERO_DADOS = 9;
+      
+      var casos = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      
+      for(var i1 = 1; i1 <= 6; i1++) {
+        for(var i2 = 1; i2 <= 6; i2++) {
+          for(var i3 = 1; i3 <= 6; i3++) {
+            for(var i4 = 1; i4 <= 6; i4++) {
+              for(var i5 = 1; i5 <= 6; i5++) {
+                if(i1 == i2 && i2 == i3 && i3 == i4 && i4 == i5) {
+                  // generala
+                  casos[GENERALA]++;
+                  continue;
+                }
+                
+                var dados = [i1, i2, i3, i4, i5];
+                var dadosPorNum = [[], [], [], [], [], []];
+                
+                var maxDadosPorNum = 0;
+                var dadosQueSuman = 0;
+                var dadosQueNoSuman = 0;
+                var hayTriplete = false;
+                var indicesTriplete = null;
+                
+                for(var i = 0; i < 5; i++) {
+                  var valorDado = dados[i];
+                  
+                  var currentList = dadosPorNum[valorDado - 1];
+                  
+                  currentList.push(i);
+                  
+                  var currentListLength = currentList.length;
+                  
+                  if(currentListLength > maxDadosPorNum) {
+                    maxDadosPorNum = currentListLength;
+                  }
+                  
+                  if(!hayTriplete && currentListLength >= 3) {
+                    hayTriplete = true;
+                    indicesTriplete = currentList.slice(); // hace una copia
+                  }
+                  
+                  if([1, 5].includes(valorDado)) {
+                    dadosQueSuman++;
+                  } else {
+                    dadosQueNoSuman++;
+                  }
+                }
+                
+                console.log(dados, hayTriplete, maxDadosPorNum);
+                
+                if(hayTriplete) {
+                  var suman = 0;
+                  
+                  for(var i = 0; i < 5; i++) {
+                    if(!indicesTriplete.includes(i)) {
+                      var valor = dados[i];
+                      if([1, 5].includes(valor)) {
+                        suman++;
+                      }
+                    }
+                  }
+                  
+                  if(suman == 0) {
+                    // triplete más cero
+                    casos[TRIPLETE_MAS_CERO]++;
+                  } else if(suman == 1) {
+                    // triplete más uno
+                    casos[TRIPLETE_MAS_UNO]++;
+                  } else if(suman == 2) {
+                    // triplete más dos
+                    casos[TRIPLETE_MAS_DOS]++;
+                  } else {
+                    throw("Es imposhible");
+                  }
+                  
+                  continue;
+                }
+                
+                if(maxDadosPorNum == 1) {
+                  // los dados son todos diferentes
+                  if(dadosPorNum[0].length == 0 || dadosPorNum[5].length == 0) {
+                    // escalera
+                    casos[ESCALERA]++;
+                    continue;
+                  }
+                }
+                
+                if(dadosQueSuman == 0) {
+                  // cero dados
+                  casos[CERO_DADOS]++;
+                } else if(dadosQueSuman == 1) {
+                  // un dado
+                  casos[UN_DADO]++;
+                } else if(dadosQueSuman == 2) {
+                  // dos dados
+                  casos[DOS_DADOS]++;
+                } else if(dadosQueSuman == 3) {
+                  // tres dados
+                  casos[TRES_DADOS]++;
+                } else if(dadosQueSuman == 4) {
+                  // cuatro dados
+                  casos[CUATRO_DADOS]++;
+                } else {
+                  throw("Es imposhible 2: " + dados.toString());
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      console.log(casos);
+      
+    </script>
+  </head>
+</html>
